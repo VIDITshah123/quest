@@ -1,0 +1,44 @@
+create a web app to store questions in the form of mcq 
+there will be three levels of users :
+1. admin (the creator/developer)
+2. company(the customer)
+3. the company employees (question_writers and reviewers)
+
+
+-->as admin
+
+the admin can see all the companies and can add new companies
+
+-->as company
+
+the company can see all the questions and can add new employees or remove employees
+the company can change the role of employees 
+There will be only two roles for employees one is question_writer and other is reviewer which can be only changed by the company 
+the reviewer can only review the questions and cannot add or edit or delete questions & can give upvotes or downvotes to the questions  & can see all the questions added by other question_writers
+the question_writer can add questions and can edit & delete their added questions & see other questions added by other question_writers & can give upvotes or downvotes to the questions  & can see all the questions added by other question_writers
+
+
+
+-->as company employee
+the company employees will be assigned either question_writer or reviewer role
+
+-->employee as question_writer
+the question_writer can add theri question and can see all the questions added by them & other question_writers   
+the question_writer can edit & delete their added questions 
+the question_writer can see all the questions added by other question_writers & can give upvotes or downvotes to their questions  & can see all the questions added by other question_writers
+the question_writer can give category & subcategory to the questions
+one question can have single correct answer or multiple correct answers 
+one question_writer can either give one upvote or one downvote to one question
+
+-->employee as reviewer
+the reviewer can only review the questions & cannot add or edit or delete questions & can give upvotes or downvotes to the questions  & can see all the questions added by other question_writers
+
+
+--<>
+the questions will be added in the form of mcq only
+each question can have maximum 6 options & minimum 4 options & correct option can be one or more than one also 
+every question will have 10 points at the starting
+by every upvote the question will get 1 point & by every downvote the question will get -1 point    
+there should be a leaderboard that shows the top 10 question_writers based on their scores. 
+There should be a leaderboard by question score also. 
+on a mouse hover on any of the question, the time of csreation & the name of employee who created the question will be displayed
