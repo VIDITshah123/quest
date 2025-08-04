@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Dropdown, Modal, Alert, Spinner, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Dropdown, Modal, Alert, Spinner, Pagination, Tooltip } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaToggleOn, FaToggleOff, FaUserTag, FaUsersCog, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -34,6 +34,7 @@ const UserList = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [showBulkRoleModal, setShowBulkRoleModal] = useState(false);
+  const [showRoleManagement, setShowRoleManagement] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
   
@@ -44,6 +45,7 @@ const UserList = () => {
   const canEditUser = hasPermission(['user_update']);
   const canDeleteUser = hasPermission(['user_delete']);
   const canBulkUpload = hasPermission(['user_create']);
+  const canManageRoles = hasPermission(['role_manage']);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -122,15 +124,48 @@ const UserList = () => {
     try {
       setBulkActionLoading(true);
       
-      // Make API call to assign role to multiple users
-      await userAPI.bulkAssignRole(selectedUsers, roleId);
+      // Check if we should replace existing roles or add to them
+      const replaceRoles = selectedUser?.replaceRoles || false;
       
-      toast.success(`Successfully assigned role to ${selectedUsers.length} users`);
+      // Make API call to assign role to multiple users
+      await userAPI.bulkAssignRole(selectedUsers, roleId, replaceRoles);
+      
+      // Update UI optimistically for better UX
+      if (replaceRoles) {
+        // If replacing roles, update each user to only have the new role
+        const role = roles.find(r => r.role_id.toString() === roleId);
+        if (role) {
+          setUsers(users.map(user => 
+            selectedUsers.includes(user.user_id) 
+              ? { ...user, roles: [role] } 
+              : user
+          ));
+        }
+      } else {
+        // If adding role, append it to existing roles if not already present
+        const role = roles.find(r => r.role_id.toString() === roleId);
+        if (role) {
+          setUsers(users.map(user => {
+            if (selectedUsers.includes(user.user_id)) {
+              const hasRole = user.roles?.some(r => r.role_id.toString() === roleId);
+              return {
+                ...user,
+                roles: hasRole ? user.roles : [...(user.roles || []), role]
+              };
+            }
+            return user;
+          }));
+        }
+      }
+      
+      toast.success(`Successfully ${replaceRoles ? 'set' : 'assigned'} role for ${selectedUsers.length} users`);
       setShowBulkRoleModal(false);
-      fetchUsers(); // Refresh the list
+      setSelectedUser(null);
     } catch (error) {
       console.error('Error assigning roles:', error);
       toast.error('Failed to assign roles. Please try again.');
+      // Refresh the list to ensure consistency
+      fetchUsers();
     } finally {
       setBulkActionLoading(false);
     }
@@ -620,7 +655,23 @@ const UserList = () => {
                   <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
                     Status {renderSortIcon('status')}
                   </th>
-                  <th className="text-center">Actions</th>
+                  <th className="text-center">
+                    <div className="d-flex align-items-center justify-content-center">
+                      Actions
+                      {canManageRoles && (
+                        <Tooltip title="Manage User Roles">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="p-0 ms-2"
+                            onClick={() => setShowRoleManagement(!showRoleManagement)}
+                          >
+                            <FaUserTag />
+                          </Button>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -780,8 +831,13 @@ const UserList = () => {
         </Card.Body>
       </Card>
       
-      {/* User Role Modal */}
-      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)} centered>
+      {/* User Role Management Modal */}
+      <Modal 
+        show={showRoleModal} 
+        onHide={() => setShowRoleModal(false)} 
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Edit User Roles</Modal.Title>
         </Modal.Header>
@@ -878,31 +934,109 @@ const UserList = () => {
       </Modal>
       
       {/* Bulk Role Assignment Modal */}
-      <Modal show={showBulkRoleModal} onHide={() => setShowBulkRoleModal(false)} centered>
+      <Modal 
+        show={showBulkRoleModal} 
+        onHide={() => {
+          setShowBulkRoleModal(false);
+          setSelectedUser(prev => ({ ...prev, replaceRoles: false })); // Reset replace option
+        }} 
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Assign Role to Multiple Users</Modal.Title>
+          <Modal.Title className="d-flex align-items-center">
+            <FaUsersCog className="me-2" />
+            <div>
+              <div>Assign Role to {selectedUsers.length} Users</div>
+              <div className="text-muted small fw-normal">
+                {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected
+              </div>
+            </div>
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Select a role to assign to {selectedUsers.length} users:</p>
+          <p>Select a role to assign to <strong>{selectedUsers.length}</strong> selected users:</p>
           
-          <Form.Group className="mb-3">
-            <Form.Label>Select Role</Form.Label>
-            <Form.Select 
-              id="bulkRoleSelect"
-              aria-label="Select Role"
-              onChange={(e) => setSelectedUser({ ...selectedUser, roleId: e.target.value })}
-            >
-              <option value="">Select a role</option>
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-bold d-block mb-3">Select Role to Assign</Form.Label>
+            <div className="d-flex gap-2 flex-wrap">
               {roles.map(role => (
-                <option key={role.role_id} value={role.role_id}>
-                  {role.name}
-                </option>
+                <div key={role.role_id} className="position-relative">
+                  <Button
+                    variant={selectedUser?.roleId === role.role_id.toString() ? 'primary' : 'outline-secondary'}
+                    className="mb-2 text-start"
+                    style={{ minWidth: '120px' }}
+                    onClick={() => setSelectedUser({ 
+                      ...selectedUser, 
+                      roleId: role.role_id.toString(),
+                      roleName: role.name 
+                    })}
+                  >
+                    <div className="d-flex align-items-center">
+                      <div className="flex-grow-1">{role.name}</div>
+                      {selectedUser?.roleId === role.role_id.toString() && (
+                        <div className="ms-2">✓</div>
+                      )}
+                    </div>
+                  </Button>
+                </div>
               ))}
-            </Form.Select>
+            </div>
           </Form.Group>
           
-          <Alert variant="info">
-            <strong>Note:</strong> This will add the selected role to all users, not replace existing roles.
+          <Form.Group className="mb-3">
+            <div className="form-check form-switch">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="replaceExistingRoles"
+                checked={selectedUser?.replaceRoles || false}
+                onChange={(e) => setSelectedUser({ 
+                  ...selectedUser, 
+                  replaceRoles: e.target.checked 
+                })}
+              />
+              <label className="form-check-label fw-bold" htmlFor="replaceExistingRoles">
+                Replace existing roles
+              </label>
+              <div className="form-text">
+                {selectedUser?.replaceRoles 
+                  ? 'Existing roles will be removed and replaced with the selected role.'
+                  : 'The selected role will be added to the user\'s existing roles.'}
+              </div>
+            </div>
+          </Form.Group>
+          
+          <Alert variant="info" className="d-flex">
+            <div className="me-2">
+              <i className="fas fa-info-circle"></i>
+            </div>
+            <div>
+              <strong className="d-block mb-2">Role Management Guidelines</strong>
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="d-flex mb-2">
+                    <div className="me-2 text-success">✓</div>
+                    <div>Select a role and click "Assign Role" to apply changes</div>
+                  </div>
+                  <div className="d-flex mb-2">
+                    <div className="me-2 text-success">✓</div>
+                    <div>Use the toggle to replace all existing roles if needed</div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="d-flex mb-2">
+                    <div className="me-2 text-warning">!</div>
+                    <div>Admin users' roles cannot be modified from this interface</div>
+                  </div>
+                  <div className="d-flex">
+                    <div className="me-2 text-info">i</div>
+                    <div>Changes may take a moment to reflect across all systems</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </Alert>
         </Modal.Body>
         <Modal.Footer>

@@ -38,13 +38,14 @@ import {
   CloudUpload as CloudUploadIcon,
   Security as SecurityIcon,
   ArrowForward as ArrowForwardIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  Business as BusinessIcon
 } from '@mui/icons-material';
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { format, subDays } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
-import { loggingAPI, userAPI, roleAPI, permissionAPI } from '../../services/api';
+import { loggingAPI, userAPI, roleAPI, permissionAPI, questionAPI } from '../../services/api';
 import FileUploadWidget from '../fileupload/FileUploadWidget';
 
 // Register Chart.js components
@@ -221,10 +222,29 @@ const Dashboard = () => {
         setIsRefreshing(true);
       }
       
-      // Base mock data
+      // Fetch real user count from the API
+      let userCount = 0;
+      let questionCount = 0;
+      
+      try {
+        // Fetch user count
+        const usersResponse = await userAPI.getUsers({ page: 1, limit: 1 });
+        userCount = usersResponse.data.total || 0;
+        
+        // Fetch question count
+        const questionsResponse = await questionAPI.getQuestions({ page: 1, limit: 1 });
+        questionCount = questionsResponse.data.total || 0;
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        // Fallback to 0 if there's an error
+        userCount = 0;
+        questionCount = 0;
+      }
+      
+      // Base stats with real data
       const baseStats = {
-        totalUsers: 1242,
-        totalQuestions: 5432,
+        totalUsers: userCount,
+        totalQuestions: questionCount,
         totalCategories: 23,
         totalAttempts: 12876,
         activeUsers: 342,
@@ -590,20 +610,6 @@ const Dashboard = () => {
           </Grid>
         )}
 
-        {/* Total Categories */}
-        {hasPermission(cardPermissions.categories) && (
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Categories"
-              value={stats.totalCategories.toLocaleString()}
-              icon={<CategoryIcon />}
-              color="warning"
-              onClick={() => navigate('/categories')}
-              loading={isRefreshing}
-            />
-          </Grid>
-        )}
-
         {/* Total Attempts */}
         {hasPermission(cardPermissions.analytics) && (
           <Grid item xs={12} sm={6} md={3}>
@@ -613,6 +619,20 @@ const Dashboard = () => {
               icon={<LeaderboardIcon />}
               color="info"
               onClick={() => navigate('/analytics')}
+              loading={isRefreshing}
+            />
+          </Grid>
+        )}
+
+        {/* New Company */}
+        {hasPermission(['company_create', 'company_manage']) && (
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="New Company"
+              value="Add New"
+              icon={<BusinessIcon />}
+              color="secondary"
+              onClick={() => navigate('/companies/new')}
               loading={isRefreshing}
             />
           </Grid>
