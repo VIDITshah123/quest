@@ -39,7 +39,9 @@ import {
   Security as SecurityIcon,
   ArrowForward as ArrowForwardIcon,
   Person as PersonIcon,
-  Business as BusinessIcon
+  Business as BusinessIcon,
+  BusinessCenter as BusinessCenterIcon,
+  AddBusiness as AddBusinessIcon
 } from '@mui/icons-material';
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
@@ -195,9 +197,11 @@ const Dashboard = () => {
 
   // Check if user has any dashboard permissions
   const hasAnyPermission = useMemo(() => {
-    return Object.values(cardPermissions).some(permissionSet => 
-      hasPermission(permissionSet)
-    );
+    return Object.values(cardPermissions).some(permissionSet => {
+      // Ensure permissionSet is an array
+      const permissionsToCheck = Array.isArray(permissionSet) ? permissionSet : [permissionSet];
+      return hasPermission(permissionsToCheck);
+    });
   }, [permissions, hasPermission]);
   
   // Check user roles
@@ -582,8 +586,23 @@ const Dashboard = () => {
 
       {/* Regular Dashboard Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* New Company Tile - Only for Admins */}
+        {hasPermission(['company_create']) && (
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="New Company"
+              value="Add Company"
+              icon={<AddBusinessIcon />}
+              color="success"
+              onClick={() => navigate('/companies/new')}
+              loading={isRefreshing}
+              clickable
+            />
+          </Grid>
+        )}
+        
         {/* Total Questions */}
-        {hasPermission(cardPermissions.questions) && (
+        {hasPermission(cardPermissions.questions || []) && (
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Total Questions"
@@ -597,7 +616,7 @@ const Dashboard = () => {
         )}
 
         {/* Total Users */}
-        {hasPermission(cardPermissions.users) && (
+        {hasPermission(cardPermissions.users || []) && (
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Total Users"
@@ -611,7 +630,7 @@ const Dashboard = () => {
         )}
 
         {/* Total Attempts */}
-        {hasPermission(cardPermissions.analytics) && (
+        {hasPermission(cardPermissions.analytics || []) && (
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Total Attempts"

@@ -37,6 +37,11 @@ import UserCreate from './components/users/UserCreate';
 import UserEdit from './components/users/UserEdit';
 import UserBulkUpload from './components/users/UserBulkUpload';
 
+// Company Management Components
+import CompanyList from './components/companies/CompanyList';
+import CompanyForm from './components/companies/CompanyForm';
+import CompanyDetails from './components/companies/CompanyDetails';
+
 // Role Management Components
 import RoleList from './components/roles/RoleList';
 import FeatureToggleList from './components/feature/FeatureToggleList';
@@ -156,6 +161,14 @@ function App() {
 
           {/* File Upload Widget Routes */}
           <Route path="admin/file-upload-settings" element={<ProtectedRoute element={<FileUploadConfig />} allowedRoles={['admin']} />} />
+          
+          {/* Company Management Routes */}
+          <Route path="companies">
+            <Route index element={<ProtectedRoute element={<CompanyList />} allowedRoles={['admin']} />} />
+            <Route path="new" element={<ProtectedRoute element={<CompanyForm />} allowedRoles={['admin']} />} />
+            <Route path=":id" element={<ProtectedRoute element={<CompanyDetails />} allowedRoles={['admin']} />} />
+            <Route path=":id/edit" element={<ProtectedRoute element={<CompanyForm />} allowedRoles={['admin']} />} />
+          </Route>
         </Route>
         
         {/* Catch All Route */}

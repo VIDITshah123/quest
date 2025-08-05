@@ -104,7 +104,38 @@ export const userAPI = {
   // Bulk operations
   bulkDeleteUsers: (userIds) => api.delete('/user_management/users/bulk-delete', { data: { userIds } }),
   bulkAssignRole: (userIds, roleId) => api.post('/user_management/users/bulk-role', { userIds, roleId }),
-  bulkToggleStatus: (userIds, isActive) => api.patch('/user_management/users/bulk-status', { userIds, is_active: isActive }),
+  bulkToggleStatus: (userIds, isActive) => {
+    return api.put('/users/bulk/toggle-status', { userIds, isActive });
+  },
+  // Company Management
+  getCompanies: (params = {}) => {
+    // Ensure we're only getting company users
+    return api.get('/users', { 
+      params: { 
+        ...params, 
+        role: 'company',
+        includeDetails: true 
+      } 
+    });
+  },
+  getCompany: (id) => {
+    return api.get(`/users/${id}`, { 
+      params: { includeDetails: true } 
+    });
+  },
+  createCompany: (companyData) => {
+    // Ensure the role is set to company
+    return api.post('/users', { ...companyData, role: 'company' });
+  },
+  updateCompany: (id, companyData) => {
+    return api.put(`/users/${id}`, companyData);
+  },
+  getCompanyEmployees: (companyId, params = {}) => {
+    return api.get(`/users/company/${companyId}/employees`, { params });
+  },
+  getCompanyStats: (companyId) => {
+    return api.get(`/users/company/${companyId}/stats`);
+  }
 };
 
 // Role Management API
