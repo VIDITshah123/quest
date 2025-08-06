@@ -1,5 +1,8 @@
 # Question Bank Management System - Implementation Task List
 
+> **Last Updated**: 2025-08-06
+> **PRD Version**: 1.0
+
 ## 1. Database Setup
 - [x] Create database schema for all required tables
   - [x] Companies (qb_master_companies)
@@ -11,8 +14,12 @@
   - [x] Votes (qb_votes)
   - [x] Question scores (qb_question_scores)
   - [x] Audit logs (qb_audit_logs)
+  - [ ] Question invalidation reasons table (missing)
+  - [ ] Leaderboard views (missing)
 - [x] Set up database relationships and constraints
 - [x] Create database indexes for performance
+- [ ] Add full-text search indexes for questions (missing)
+- [ ] Add performance optimization for leaderboard queries (missing)
 
 
 ## 2. Backend API Development
@@ -48,6 +55,10 @@
   - [x] GET /api/questions - List questions with filters
   - [x] POST /api/questions - Add new question
   - [x] GET /api/questions/:id - Get question details
+  - [ ] PUT /api/questions/:id/vote - Vote on a question (missing)
+  - [ ] PUT /api/questions/:id/invalidate - Invalidate a question (missing)
+  - [ ] GET /api/questions/leaderboard - Get question leaderboard (missing)
+  - [ ] GET /api/questions/employee-leaderboard - Get employee leaderboard (missing)
   - [x] PUT /api/questions/:id - Update question
   - [x] DELETE /api/questions/:id - Delete question (soft delete)
 - [x] Implement question validation (using express-validator)
@@ -120,9 +131,13 @@
 - [ ] Performance analytics
 - [ ] Bulk question upload
 - [ ] Question duplication detection
+- [ ] Question versioning
+- [ ] Rich text editor for question content
+- [ ] Image support in questions
+- [ ] Question difficulty prediction
+- [ ] Automated question quality scoring
 
-
-<!-- ## 5. Deployment
+## 5. Deployment
 - [ ] Set up production database
 - [ ] Configure environment variables
 - [ ] Set up CI/CD pipeline

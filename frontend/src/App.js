@@ -17,6 +17,9 @@ import Unauthorized from './components/common/Unauthorized';
 
 // Dashboard Components
 import Dashboard from './components/dashboard/Dashboard';
+import CompanyDashboard from './components/dashboard/CompanyDashboard';
+import QuestionWriterDashboard from './components/dashboard/QuestionWriterDashboard';
+import ReviewerDashboard from './components/dashboard/ReviewerDashboard';
 
 // Question Management Components
 import QuestionList from './components/questions/QuestionList';
@@ -110,15 +113,53 @@ function App() {
           } />
           
           <Route index element={<Navigate to="/dashboard" />} />
-          <Route path="dashboard" element={withFeatureRoute(Dashboard, 'dashboard', 'view')} />
+          <Route 
+            path="dashboard" 
+            element={
+              hasRole('Company') ? (
+                <ProtectedRoute element={<CompanyDashboard />} />
+              ) : hasRole('question_writer') ? (
+                <ProtectedRoute element={<QuestionWriterDashboard />} />
+              ) : hasRole('reviewer') ? (
+                <ProtectedRoute element={<ReviewerDashboard />} />
+              ) : (
+                withFeatureRoute(Dashboard, 'dashboard', 'view')
+              )
+            } 
+          />
           
           {/* User Management Routes */}
           <Route path="users">
-            <Route index element={withFeatureRoute(UserList, 'users_list', 'view')} />
-            <Route path=":id" element={<ProtectedRoute element={<UserDetails />} />} />
-            <Route path="create" element={<ProtectedRoute element={<UserCreate />} allowedRoles={['admin']} />} />
-            <Route path="edit/:id" element={<ProtectedRoute element={<UserEdit />} allowedRoles={['admin']} />} />
-            <Route path="bulk-upload" element={<ProtectedRoute element={<UserBulkUpload />} allowedRoles={['admin']} />} />
+            <Route index element={
+              <ProtectedRoute 
+                element={<UserList />} 
+                allowedRoles={hasRole('Company') ? ['Company'] : ['admin']} 
+              />
+            } />
+            <Route path=":id" element={
+              <ProtectedRoute 
+                element={<UserDetails />} 
+                allowedRoles={hasRole('Company') ? ['Company'] : undefined} 
+              />
+            } />
+            <Route path="create" element={
+              <ProtectedRoute 
+                element={<UserCreate />} 
+                allowedRoles={hasRole('Company') ? ['Company'] : ['admin']} 
+              />
+            } />
+            <Route path="edit/:id" element={
+              <ProtectedRoute 
+                element={<UserEdit />} 
+                allowedRoles={hasRole('Company') ? ['Company'] : ['admin']} 
+              />
+            } />
+            <Route path="bulk-upload" element={
+              <ProtectedRoute 
+                element={<UserBulkUpload />} 
+                allowedRoles={hasRole('Company') ? ['Company'] : ['admin']} 
+              />
+            } />
           </Route>
           
           {/* Role Management Routes */}
@@ -144,14 +185,39 @@ function App() {
           
           {/* Question Management Routes */}
           <Route path="questions">
-            <Route index element={withFeatureRoute(QuestionList, 'questions_list', 'view')} />
-            <Route path="create" element={<ProtectedRoute element={<QuestionCreate />} allowedRoles={['admin', 'content_creator']} />} />
-            <Route path="edit/:id" element={<ProtectedRoute element={<QuestionEdit />} allowedRoles={['admin', 'content_creator']} />} />
-            <Route path="categories" element={<ProtectedRoute element={<QuestionCategories />} allowedRoles={['admin', 'content_creator']} />} />
+            <Route index element={
+              <ProtectedRoute 
+                element={<QuestionList />} 
+                allowedRoles={hasRole('Company') ? ['Company'] : undefined} 
+              />
+            } />
+            <Route path="create" element={
+              <ProtectedRoute 
+                element={<QuestionCreate />} 
+                allowedRoles={hasRole('Company') ? [] : ['admin', 'content_creator']} 
+              />
+            } />
+            <Route path="edit/:id" element={
+              <ProtectedRoute 
+                element={<QuestionEdit />} 
+                allowedRoles={hasRole('Company') ? [] : ['admin', 'content_creator']} 
+              />
+            } />
+            <Route path="categories" element={
+              <ProtectedRoute 
+                element={<QuestionCategories />} 
+                allowedRoles={hasRole('Company') ? [] : ['admin', 'content_creator']} 
+              />
+            } />
           </Route>
 
           {/* Leaderboard Route */}
-          <Route path="leaderboard" element={<ProtectedRoute element={<Leaderboard />} />} />
+          <Route path="leaderboard" element={
+            <ProtectedRoute 
+              element={<Leaderboard />} 
+              allowedRoles={hasRole('Company') ? ['Company'] : undefined} 
+            />
+          } />
           
           {/* Favorites Route */}
           <Route path="favorites" element={<ProtectedRoute element={<Favorites />} />} />

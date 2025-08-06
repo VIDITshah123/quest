@@ -39,7 +39,11 @@ import {
   EmojiEvents as LeaderboardIcon,
   Star as StarIcon,
   Person as PersonIcon,
-  CloudUpload as CloudUploadIcon
+  CloudUpload as CloudUploadIcon,
+  Add as AddIcon,
+  Category as CategoryIcon,
+  Visibility as VisibilityIcon,
+  ThumbDown as ThumbDownIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { featureToggleAPI } from '../../services/api';
@@ -59,7 +63,184 @@ const Sidebar = ({ collapsed, onToggleCollapse }) => {
   const [hoveredItem, setHoveredItem] = useState(null);
 
   // Grouped menu items
-  const menuGroups = [
+  const menuGroups = hasRole('Company') ? [
+    {
+      group: 'Main',
+      items: [
+        {
+          name: 'Dashboard',
+          path: '/dashboard',
+          icon: <DashboardIcon />
+        },
+        {
+          name: 'Questions',
+          path: '/questions',
+          icon: <MenuBookIcon />,
+          permission: 'question_view'
+        },
+        {
+          name: 'Leaderboard',
+          path: '/leaderboard',
+          icon: <LeaderboardIcon />,
+          permission: 'leaderboard_view'
+        }
+      ]
+    },
+    {
+      group: 'Employee Management',
+      items: [
+        {
+          name: 'Employees',
+          path: '/users',
+          icon: <PeopleIcon />,
+          permission: 'user_view',
+          children: [
+            { name: 'All Employees', path: '/users', permission: 'user_view' },
+            { name: 'Add Employee', path: '/users/create', permission: 'user_create' }
+          ]
+        }
+      ]
+    }
+  ] : hasRole('question_writer') ? [
+    {
+      group: 'Main',
+      items: [
+        {
+          name: 'Dashboard',
+          path: '/dashboard',
+          icon: <DashboardIcon />
+        },
+        {
+          name: 'My Questions',
+          path: '/questions?myQuestions=true',
+          icon: <MenuBookIcon />,
+          permission: 'question_view'
+        },
+        {
+          name: 'Create Question',
+          path: '/questions/create',
+          icon: <AddIcon />,
+          permission: 'question_create'
+        },
+        {
+          name: 'Categories',
+          path: '/questions/categories',
+          icon: <CategoryIcon />,
+          permission: 'question_manage_categories'
+        },
+        {
+          name: 'Leaderboard',
+          path: '/leaderboard',
+          icon: <LeaderboardIcon />,
+          permission: 'leaderboard_view'
+        }
+      ]
+    },
+    {
+      group: 'Review',
+      items: [
+        {
+          name: 'Review Questions',
+          path: '/questions?status=pending_review',
+          icon: <VisibilityIcon />,
+          permission: 'question_review'
+        },
+        {
+          name: 'Invalidated',
+          path: '/questions?status=invalidated',
+          icon: <ThumbDownIcon />,
+          permission: 'question_view'
+        }
+      ]
+    }
+  ] : hasRole('reviewer') ? [
+    {
+      group: 'Main',
+      items: [
+        {
+          name: 'Dashboard',
+          path: '/dashboard',
+          icon: <DashboardIcon />
+        },
+        {
+          name: 'All Questions',
+          path: '/questions',
+          icon: <MenuBookIcon />,
+          permission: 'question_view'
+        },
+        {
+          name: 'Pending Review',
+          path: '/questions?status=pending_review',
+          icon: <VisibilityIcon />,
+          permission: 'question_review'
+        },
+        {
+          name: 'Invalidated',
+          path: '/questions?status=invalidated',
+          icon: <ThumbDownIcon />,
+          permission: 'question_view'
+        },
+        {
+          name: 'Leaderboard',
+          path: '/leaderboard',
+          icon: <LeaderboardIcon />,
+          permission: 'leaderboard_view'
+        }
+      ]
+    }
+  ] : hasRole('question_writer') ? [
+    {
+      group: 'Main',
+      items: [
+        {
+          name: 'Dashboard',
+          path: '/dashboard',
+          icon: <DashboardIcon />
+        },
+        {
+          name: 'My Questions',
+          path: '/questions?myQuestions=true',
+          icon: <MenuBookIcon />,
+          permission: 'question_view'
+        },
+        {
+          name: 'Create Question',
+          path: '/questions/create',
+          icon: <AddIcon />,
+          permission: 'question_create'
+        },
+        {
+          name: 'Categories',
+          path: '/questions/categories',
+          icon: <CategoryIcon />,
+          permission: 'question_manage_categories'
+        },
+        {
+          name: 'Leaderboard',
+          path: '/leaderboard',
+          icon: <LeaderboardIcon />,
+          permission: 'leaderboard_view'
+        }
+      ]
+    },
+    {
+      group: 'Review',
+      items: [
+        {
+          name: 'Review Questions',
+          path: '/questions?status=pending_review',
+          icon: <VisibilityIcon />,
+          permission: 'question_review'
+        },
+        {
+          name: 'Invalidated',
+          path: '/questions?status=invalidated',
+          icon: <ThumbDownIcon />,
+          permission: 'question_view'
+        }
+      ]
+    }
+  ] : [
     {
       group: 'Main',
       items: [

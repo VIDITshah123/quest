@@ -218,10 +218,21 @@ export const AuthProvider = ({ children }) => {
 
   // Helper method to check if user has specific roles
   const hasRole = (requiredRoles) => {
-    if (!requiredRoles || requiredRoles.length === 0) return true;
-    if (!roles || roles.length === 0) return false;
+    // Handle null/undefined or empty array
+    if (!requiredRoles || (Array.isArray(requiredRoles) && requiredRoles.length === 0)) {
+      return true;
+    }
     
-    return requiredRoles.some(role => roles.includes(role));
+    // If requiredRoles is a string, convert it to an array
+    const rolesToCheck = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+    
+    // If no roles are available, return false
+    if (!Array.isArray(roles) || roles.length === 0) {
+      return false;
+    }
+    
+    // Check if any of the required roles match the user's roles
+    return rolesToCheck.some(role => roles.includes(role));
   };
 
   const value = {
