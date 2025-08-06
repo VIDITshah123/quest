@@ -277,70 +277,141 @@ export const loggingAPI = {
 export const featureToggleAPI = {
   getToggles: () => api.get('/feature-toggles'),
   getToggle: (name) => api.get(`/feature-toggles/${name}`),
-  updateToggle: (name, isEnabled) => api.patch('/feature-toggles/update', { name, is_enabled: isEnabled }),
+  updateToggle: (name, isEnabled) => api.patch('/feature-toggles/update', { name, is_enabled: isEnabled })
 };
 
 // Question Bank API
 export const questionAPI = {
-  // Questions
-  getQuestions: (params) => api.get('/questions', { params }),
-  getQuestion: (id) => api.get(`/questions/${id}`),
-  createQuestion: (questionData) => api.post('/questions', questionData),
-  updateQuestion: (id, questionData) => api.put(`/questions/${id}`, questionData),
-  deleteQuestion: (id) => api.delete(`/questions/${id}`),
-  bulkDeleteQuestions: (questionIds) => api.delete('/questions/bulk-delete', { data: { questionIds } }),
-  
+  getQuestions: (params = {}) => api.get('/questions', { 
+    params,
+    validateStatus: (status) => status < 500 // Don't reject for 4xx errors
+  }),
+  getQuestion: (id) => api.get(`/questions/${id}`, {
+    validateStatus: (status) => status < 500
+  }),
+  createQuestion: (questionData) => api.post('/questions', questionData, {
+    validateStatus: (status) => status < 500
+  }),
+  updateQuestion: (id, questionData) => api.put(`/questions/${id}`, questionData, {
+    validateStatus: (status) => status < 500
+  }),
+  deleteQuestion: (id) => api.delete(`/questions/${id}`, {
+    validateStatus: (status) => status < 500
+  }),
+  bulkDeleteQuestions: (questionIds) => api.post('/questions/bulk-delete', { ids: questionIds }, {
+    validateStatus: (status) => status < 500
+  }),
+  voteOnQuestion: (questionId, voteData) => api.post(`/questions/${questionId}/vote`, voteData, {
+    validateStatus: (status) => status < 500
+  }),
+  invalidateQuestion: (questionId, invalidationData) => api.post(`/questions/${questionId}/invalidate`, invalidationData, {
+    validateStatus: (status) => status < 500
+  }),
+
   // Categories
-  getCategories: () => api.get('/questions/categories'),
-  createCategory: (categoryData) => api.post('/questions/categories', categoryData),
-  updateCategory: (id, categoryData) => api.put(`/questions/categories/${id}`, categoryData),
-  deleteCategory: (id) => api.delete(`/questions/categories/${id}`),
-  
+  getCategories: () => api.get('/categories', {
+    validateStatus: (status) => status < 500
+  }),
+  createCategory: (categoryData) => api.post('/categories', categoryData, {
+    validateStatus: (status) => status < 500
+  }),
+  updateCategory: (id, categoryData) => api.put(`/categories/${id}`, categoryData, {
+    validateStatus: (status) => status < 500
+  }),
+  deleteCategory: (id) => api.delete(`/categories/${id}`, {
+    validateStatus: (status) => status < 500
+  }),
+
   // Favorites
-  getFavorites: (params) => api.get('/questions/favorites', { params }),
-  addFavorite: (questionId) => api.post(`/questions/${questionId}/favorite`),
-  removeFavorite: (questionId) => api.delete(`/questions/${questionId}/favorite`),
-  
+  getFavorites: (params = {}) => api.get('/favorites', { 
+    params,
+    validateStatus: (status) => status < 500
+  }),
+  addFavorite: (questionId) => api.post('/favorites', { questionId }, {
+    validateStatus: (status) => status < 500
+  }),
+  removeFavorite: (questionId) => api.delete(`/favorites/${questionId}`, {
+    validateStatus: (status) => status < 500
+  }),
+
   // Import/Export
   importQuestions: (formData, onUploadProgress) => api.post('/questions/import', formData, {
     headers: {
-      'Content-Type': 'multipart/form-data'
+      'Content-Type': 'multipart/form-data',
     },
-    onUploadProgress
+    onUploadProgress,
+    validateStatus: (status) => status < 500
   }),
-  exportQuestions: (params) => api.get('/questions/export', { 
+  exportQuestions: (params = {}) => api.get('/questions/export', {
     params,
-    responseType: 'blob' 
+    responseType: 'blob',
+    validateStatus: (status) => status < 500
   }),
-  downloadTemplate: () => api.get('/questions/template', { responseType: 'blob' })
+  downloadTemplate: () => api.get('/questions/template', { 
+    responseType: 'blob',
+    validateStatus: (status) => status < 500
+  }),
 };
 
 // Leaderboard API
 export const leaderboardAPI = {
-  getLeaderboard: (params) => api.get('/leaderboard', { params }),
-  getUserRank: (userId) => api.get(`/leaderboard/user/${userId}`),
-  getStats: () => api.get('/leaderboard/stats'),
-  getTimeRanges: () => api.get('/leaderboard/time-ranges')
+  getLeaderboard: (timeframe = 'all') => api.get(`/leaderboard?timeframe=${timeframe}`, {
+    validateStatus: (status) => status < 500
+  }),
+  getUserRank: (userId) => api.get(`/leaderboard/rank/${userId}`, {
+    validateStatus: (status) => status < 500
+  }),
+  getRewards: () => api.get('/leaderboard/rewards', {
+    validateStatus: (status) => status < 500
+  }),
+  claimReward: (rewardId) => api.post(`/leaderboard/rewards/${rewardId}/claim`, null, {
+    validateStatus: (status) => status < 500
+  }),
 };
 
 // Favorites API
 export const favoritesAPI = {
-  getFavorites: (params) => api.get('/favorites', { params }),
-  addFavorite: (questionId) => api.post('/favorites', { questionId }),
-  removeFavorite: (favoriteId) => api.delete(`/favorites/${favoriteId}`),
-  bulkRemoveFavorites: (favoriteIds) => api.delete('/favorites/bulk-remove', { data: { favoriteIds } })
+  getFavorites: (params = {}) => api.get('/favorites', { 
+    params,
+    validateStatus: (status) => status < 500 
+  }),
+  addFavorite: (questionId) => api.post('/favorites', { questionId }, {
+    validateStatus: (status) => status < 500
+  }),
+  removeFavorite: (favoriteId) => api.delete(`/favorites/${favoriteId}`, {
+    validateStatus: (status) => status < 500
+  }),
+  bulkRemoveFavorites: (favoriteIds) => api.delete('/favorites/bulk-remove', { 
+    data: { favoriteIds },
+    validateStatus: (status) => status < 500
+  })
 };
 
 // Payment API
 export const paymentAPI = {
   // QR Code operations
-  getQrCodes: () => api.get('/payment/qr-codes'),
-  getQrCode: (id) => api.get(`/payment/qr-codes/${id}`),
-  deleteQrCode: (id) => api.delete(`/payment/qr-codes/${id}`),
-  activateQrCode: (id) => api.post(`/payment/qr-codes/${id}/activate`),
+  getQrCodes: () => api.get('/payment/qr-codes', {
+    validateStatus: (status) => status < 500
+  }),
+  getQrCode: (id) => api.get(`/payment/qr-codes/${id}`, {
+    validateStatus: (status) => status < 500
+  }),
+  deleteQrCode: (id) => api.delete(`/payment/qr-codes/${id}`, {
+    validateStatus: (status) => status < 500
+  }),
+  activateQrCode: (id) => api.post(`/payment/qr-codes/${id}/activate`, null, {
+    validateStatus: (status) => status < 500
+  }),
+  
   // Transactions
-  getTransactions: (params) => api.get('/payment/transactions', { params }),
-  getTransaction: (id) => api.get(`/payment/transactions/${id}`),
+  getTransactions: (params = {}) => api.get('/payment/transactions', { 
+    params,
+    validateStatus: (status) => status < 500
+  }),
+  getTransaction: (id) => api.get(`/payment/transactions/${id}`, {
+    validateStatus: (status) => status < 500
+  }),
+  
   // Special handling for file uploads with authentication
   uploadQrCode: (formData) => {
     const token = localStorage.getItem('token');
@@ -348,11 +419,13 @@ export const paymentAPI = {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${token}`
-      }
+      },
+      validateStatus: (status) => status < 500
     });
   },
-  // Feature toggle status
-  getPaymentStatus: () => api.get('/payment/status')
+  getPaymentStatus: () => api.get('/payment/status', {
+    validateStatus: (status) => status < 500
+  })
 };
 
 export default api;

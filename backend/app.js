@@ -149,6 +149,9 @@ app.use('/api', widgetConfigRouter);
 const widgetConfigRoutes = require('./routes/widget-config');
 app.use('/api', widgetConfigRoutes);
 
+// Register question bank routes
+app.use('/api/questions', questionBankRouter);
+
 // Register file upload routes
 const fileUploadRoutes = require('./routes/file-upload');
 app.use('/api', fileUploadRoutes);
