@@ -38,7 +38,12 @@ import {
   Refresh as RefreshIcon,
   Dashboard as DashboardIcon,
   MenuBook as MenuBookIcon,
-  EmojiEvents as LeaderboardIcon
+  EmojiEvents as LeaderboardIcon,
+  CheckCircle as CheckCircleIcon,
+  TrendingUp as TrendingUpIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { questionAPI } from '../../services/api';
@@ -66,33 +71,40 @@ const ReviewerDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Fetch questions data
+      // Fetch questions data with filters for reviewer
+      const [pendingResponse, invalidatedResponse, reviewedResponse] = await Promise.all([
+        questionAPI.getQuestions({
+          status: 'pending_review',
+          limit: 1, // We only need the count
+          includeStats: true
+        }),
+        questionAPI.getQuestions({
+          status: 'invalidated',
+          limit: 1, // We only need the count
+          includeStats: true
+        }),
+        questionAPI.getQuestions({
+          reviewedBy: currentUser.user_id,
+          limit: 1, // We only need the count
+          includeStats: true
+        })
+      ]);
+
+      // Fetch recent questions for the table
       const questionsResponse = await questionAPI.getQuestions({
         page: 1,
         limit: 10,
         sortBy: 'created_at',
         sortOrder: 'desc',
-        includeStats: true
+        includeVotes: true
       });
       
-      // Calculate stats
-      const pendingReview = questionsResponse.data.questions.filter(
-        q => q.status === 'pending_review'
-      ).length;
-      
-      const invalidated = questionsResponse.data.questions.filter(
-        q => q.status === 'invalidated'
-      ).length;
-      
-      const reviewedByMe = questionsResponse.data.questions.filter(
-        q => q.reviewed_by === currentUser.user_id
-      ).length;
-      
+      // Set stats from the API responses
       setStats({
-        totalQuestions: questionsResponse.data.total || 0,
-        pendingReview,
-        invalidated,
-        reviewedByMe
+        pendingReview: pendingResponse.data.total || 0,
+        invalidated: invalidatedResponse.data.total || 0,
+        reviewedByMe: reviewedResponse.data.total || 0,
+        totalReviewed: reviewedResponse.data.total || 0
       });
       
       setQuestions(questionsResponse.data.questions);
@@ -151,7 +163,14 @@ const ReviewerDashboard = () => {
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color = 'primary', onClick }) => (
+  const StatCard = ({ 
+    title, 
+    value, 
+    icon: Icon, 
+    color = 'primary', 
+    subtitle = '',
+    onClick 
+  }) => (
     <Card 
       sx={{ 
         height: '100%',
@@ -166,16 +185,25 @@ const ReviewerDashboard = () => {
       }}
       onClick={onClick}
     >
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography color="textSecondary" variant="overline">
-            {title}
-          </Typography>
-          <Icon color={color} />
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+          <Box>
+            <Typography color="textSecondary" variant="overline" display="block">
+              {title}
+            </Typography>
+            {subtitle && (
+              <Typography variant="caption" color="textSecondary" display="block">
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+          <Icon color={color} sx={{ fontSize: 40, opacity: 0.2 }} />
         </Box>
-        <Typography variant="h4">
-          {isLoading ? <CircularProgress size={24} /> : value}
-        </Typography>
+        <Box mt={2}>
+          <Typography variant="h4" component="div">
+            {isLoading ? <CircularProgress size={24} /> : value}
+          </Typography>
+        </Box>
       </CardContent>
     </Card>
   );
@@ -199,41 +227,47 @@ const ReviewerDashboard = () => {
       
       <Divider sx={{ mb: 4 }} />
       
-      {/* Quick Stats */}
+      {/* Reviewer Focused Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard 
-            title="Total Questions" 
-            value={stats.totalQuestions}
-            icon={MenuBookIcon}
-            color="info"
-            onClick={() => navigate('/questions')}
-          />
-        </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard 
             title="Pending Review" 
             value={stats.pendingReview}
             icon={VisibilityIcon}
             color="warning"
+            subtitle="Questions awaiting your review"
             onClick={() => navigate('/questions?status=pending_review')}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard 
-            title="Invalidated" 
+            title="Marked as Invalid" 
             value={stats.invalidated}
             icon={ReportProblemIcon}
             color="error"
-            onClick={() => navigate('/questions?status=invalidated')}
+            subtitle="Questions you've invalidated"
+            onClick={() => navigate('/questions?status=invalidated&reviewedBy=me')}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard 
-            title="Reviewed By Me" 
+            title="Total Reviewed" 
             value={stats.reviewedByMe}
-            icon={LeaderboardIcon}
+            icon={CheckCircleIcon}
             color="success"
+            subtitle="Questions you've reviewed"
+            onClick={() => navigate('/questions?reviewedBy=me')}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard 
+            title="Review Accuracy" 
+            value={stats.reviewedByMe > 0 
+              ? `${Math.round((1 - (stats.invalidated / stats.reviewedByMe)) * 100)}%` 
+              : 'N/A'}
+            icon={TrendingUpIcon}
+            color="info"
+            subtitle="Based on question acceptance"
           />
         </Grid>
       </Grid>
