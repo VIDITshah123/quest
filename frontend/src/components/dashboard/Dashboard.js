@@ -461,7 +461,6 @@ const Dashboard = () => {
                 value={stats.companyQuestionCount?.toLocaleString() || '0'}
                 icon={<QuestionIcon />}
                 color="primary"
-                onClick={() => navigate('/company/questions')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -473,7 +472,6 @@ const Dashboard = () => {
                 value={`${stats.companyAverageScore || '0'}%`}
                 icon={<TrendingUpIcon />}
                 color="success"
-                onClick={() => navigate('/company/scoreboard')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -485,7 +483,6 @@ const Dashboard = () => {
                 value={stats.questionWritersCount?.toLocaleString() || '0'}
                 icon={<PersonIcon />}
                 color="info"
-                onClick={() => navigate('/company/team/writers')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -496,7 +493,6 @@ const Dashboard = () => {
                 value={stats.reviewersCount?.toLocaleString() || '0'}
                 icon={<PeopleIcon />}
                 color="warning"
-                onClick={() => navigate('/company/team/reviewers')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -518,7 +514,6 @@ const Dashboard = () => {
                 value={`${stats.reviewScore || '0'} pts`}
                 icon={<TrendingUpIcon />}
                 color="info"
-                onClick={() => navigate('/reviewer/score')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -530,7 +525,6 @@ const Dashboard = () => {
                 value={`#${stats.reviewerRank || '-'}`}
                 icon={<LeaderboardIcon />}
                 color="warning"
-                onClick={() => navigate('/reviewer/leaderboard')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -552,7 +546,6 @@ const Dashboard = () => {
                 value={stats.myQuestionsCount?.toLocaleString() || '0'}
                 icon={<QuestionIcon />}
                 color="primary"
-                onClick={() => navigate('/my-questions')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -564,7 +557,6 @@ const Dashboard = () => {
                 value={`${stats.questionScore || '0'} pts`}
                 icon={<TrendingUpIcon />}
                 color="success"
-                onClick={() => navigate('/my-score')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -576,7 +568,6 @@ const Dashboard = () => {
                 value={`#${stats.leaderboardRank || '-'}`}
                 icon={<LeaderboardIcon />}
                 color="warning"
-                onClick={() => navigate('/leaderboard')}
                 loading={isRefreshing}
               />
             </Grid>
@@ -609,7 +600,6 @@ const Dashboard = () => {
               value={stats.totalQuestions.toLocaleString()}
               icon={<QuestionIcon />}
               color="primary"
-              onClick={() => navigate('/questions')}
               loading={isRefreshing}
             />
           </Grid>
@@ -623,7 +613,6 @@ const Dashboard = () => {
               value={stats.totalUsers.toLocaleString()}
               icon={<PeopleIcon />}
               color="success"
-              onClick={() => navigate('/users')}
               loading={isRefreshing}
             />
           </Grid>
@@ -637,7 +626,6 @@ const Dashboard = () => {
               value={stats.totalAttempts.toLocaleString()}
               icon={<LeaderboardIcon />}
               color="info"
-              onClick={() => navigate('/analytics')}
               loading={isRefreshing}
             />
           </Grid>
@@ -658,177 +646,6 @@ const Dashboard = () => {
         )}
       </Grid>
 
-      {/* Charts Row 1 */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Activity Chart */}
-        <Grid item xs={12} md={8}>
-          <ChartCard 
-            title="Activity Overview" 
-            subheader="Questions attempted over time"
-            loading={isRefreshing}
-            action={
-              <IconButton size="small" onClick={handleRefresh} disabled={isRefreshing}>
-                <RefreshIcon fontSize="small" />
-              </IconButton>
-            }
-          >
-            <Box sx={{ height: 350, mt: 3, position: 'relative' }}>
-              <Line 
-                data={activityData} 
-                options={{
-                  ...chartOptions,
-                  plugins: {
-                    ...chartOptions.plugins,
-                    title: {
-                      display: true,
-                      text: 'Questions Attempted (Last 7 Days)',
-                      font: { size: 16, weight: '500' },
-                      padding: { bottom: 16 }
-                    }
-                  }
-                }} 
-              />
-            </Box>
-          </ChartCard>
-        </Grid>
-
-        {/* Category Distribution */}
-        <Grid item xs={12} md={4}>
-          <ChartCard 
-            title="Category Distribution"
-            subheader="Questions by category"
-            loading={isRefreshing}
-          >
-            <Box sx={{ height: 350, position: 'relative' }}>
-              <Doughnut 
-                data={categoryDistribution} 
-                options={{
-                  ...chartOptions,
-                  cutout: '70%',
-                  plugins: {
-                    ...chartOptions.plugins,
-                    legend: {
-                      ...chartOptions.plugins.legend,
-                      position: 'bottom',
-                      labels: {
-                        ...chartOptions.plugins.legend.labels,
-                        padding: 20
-                      }
-                    }
-                  }
-                }} 
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  textAlign: 'center',
-                  pointerEvents: 'none'
-                }}
-              >
-                <Typography variant="h4" color="text.secondary">
-                  {categoryDistribution.datasets[0]?.data.reduce((a, b) => a + b, 0).toLocaleString()}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Questions
-                </Typography>
-              </Box>
-            </Box>
-          </ChartCard>
-        </Grid>
-      </Grid>
-
-      {/* Charts Row 2 */}
-      <Grid container spacing={3}>
-        {/* Difficulty Distribution */}
-        <Grid item xs={12} md={6}>
-          <ChartCard 
-            title="Difficulty Distribution"
-            subheader="Questions by difficulty level"
-            loading={isRefreshing}
-          >
-            <Box sx={{ height: 350, mt: 3 }}>
-              <Bar 
-                data={difficultyData} 
-                options={{
-                  ...chartOptions,
-                  indexAxis: 'y',
-                  plugins: {
-                    ...chartOptions.plugins,
-                    legend: {
-                      display: false
-                    },
-                    title: {
-                      display: true,
-                      text: 'Questions by Difficulty',
-                      font: { size: 16, weight: '500' },
-                      padding: { bottom: 16 }
-                    }
-                  }
-                }} 
-              />
-            </Box>
-          </ChartCard>
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid item xs={12} md={6}>
-          <ChartCard 
-            title="Recent Activity"
-            subheader="Latest system activities"
-            loading={isRefreshing}
-            action={
-              <Button 
-                size="small" 
-                endIcon={<ArrowForwardIcon />}
-                onClick={() => navigate('/activity')}
-              >
-                View All
-              </Button>
-            }
-          >
-            <Box sx={{ height: 350, overflow: 'auto' }}>
-              {[1, 2, 3, 4, 5].map((item, index) => (
-                <Box 
-                  key={index} 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    py: 1.5,
-                    borderBottom: index < 4 ? `1px solid ${theme.palette.divider}` : 'none'
-                  }}
-                >
-                  <Avatar 
-                    sx={{ 
-                      width: 40, 
-                      height: 40, 
-                      mr: 2,
-                      bgcolor: theme.palette.primary.light,
-                      color: theme.palette.primary.contrastText
-                    }}
-                  >
-                    <PersonIcon />
-                  </Avatar>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle2" noWrap>
-                      {['Question Added', 'User Registered', 'Test Completed', 'Category Updated', 'Settings Changed'][index]}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson', 'System'][index]}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 2, whiteSpace: 'nowrap' }}>
-                    {index === 0 ? 'Just now' : `${index + 1}h ago`}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </ChartCard>
-        </Grid>
-      </Grid>
-
       {/* File Upload Section - Only show if user has permission */}
       {hasPermission(['file_upload']) && (
         <Box sx={{ mt: 4 }}>
@@ -845,7 +662,7 @@ const Dashboard = () => {
 };
 
 // StatCard Component
-const StatCard = ({ title, value, icon, color = 'primary', onClick, loading = false }) => {
+const StatCard = ({ title, value, icon, color = 'primary', onClick, loading = false, clickable = false }) => {
   const theme = useTheme();
   
   const colorMap = {
@@ -861,13 +678,13 @@ const StatCard = ({ title, value, icon, color = 'primary', onClick, loading = fa
   
   return (
     <Card 
-      onClick={onClick}
+      onClick={clickable ? onClick : undefined}
       sx={{
-        cursor: onClick ? 'pointer' : 'default',
+        cursor: clickable ? 'pointer' : 'default',
         transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
-          transform: onClick ? 'translateY(-4px)' : 'none',
-          boxShadow: onClick ? theme.shadows[8] : 'none',
+          transform: 'translateY(-4px)',
+          boxShadow: theme.shadows[8],
         },
         height: '100%',
         position: 'relative',
