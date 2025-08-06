@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Database path
-const dbPath = path.join(__dirname, '..', 'db', 'questionbank.db');
+const dbPath = path.join(__dirname, '..', 'db', 'questionbank01.db');
 
 // Open database connection
 const db = new sqlite3.Database(dbPath, (err) => {

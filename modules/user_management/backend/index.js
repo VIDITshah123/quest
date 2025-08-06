@@ -343,6 +343,9 @@ router.get('/users/:id', authenticateToken, checkPermissions(['user_view']), asy
  * @route PUT /api/user_management/users/:id
  * @description Update user information
  * @access Private - Requires user_edit permission
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} Response with success/error message
  */
 router.put('/users/:id', [
   authenticateToken, 
@@ -353,6 +356,14 @@ router.put('/users/:id', [
   body('mobile_number').optional().notEmpty().withMessage('Mobile number cannot be empty'),
   body('roles').optional().isArray().withMessage('Roles must be an array')
 ], async (req, res) => {
+  // Log the incoming request
+  console.log('Update user request received:', {
+    params: req.params,
+    body: req.body,
+    user: req.user,
+    headers: req.headers,
+    timestamp: new Date().toISOString()
+  });
   try {
     // Validate request
     const errors = validationResult(req);
@@ -458,11 +469,38 @@ router.put('/users/:id', [
     });
     
     return res.status(200).json({ 
-      message: 'User updated successfully'
+      message: 'User updated successfully',
+      user_id: userId,
+      updated_fields: updateFields,
+      updated_roles: roles || 'No role changes'
     });
   } catch (error) {
-    console.error(`Error updating user ${req.params.id}:`, error);
-    return res.status(500).json({ error: 'Failed to update user' });
+    console.error(`Error updating user ${req.params.id}:`, {
+      error: error.message,
+      stack: error.stack,
+      request: {
+        params: req.params,
+        body: req.body,
+        user: req.user,
+        headers: req.headers
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+    // More specific error handling
+    if (error.code === 'SQLITE_CONSTRAINT') {
+      return res.status(409).json({ 
+        error: 'Database constraint violation',
+        details: 'This operation would violate a database constraint (e.g., unique constraint)',
+        code: error.code
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Failed to update user',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      code: 'USER_UPDATE_ERROR'
+    });
   }
 });
 

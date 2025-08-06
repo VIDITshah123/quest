@@ -22,8 +22,16 @@ const eventBus = new EventEmitter();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// CORS Configuration
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
@@ -39,7 +47,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Database initialization
-const dbPath = path.join(__dirname, '..', 'db', process.env.DB_NAME || 'questionbank.db');
+const dbPath = path.join(__dirname, '..', 'db', process.env.DB_NAME || 'questionbank01.db');
 const dbExists = fs.existsSync(dbPath);
 
 // Create db directory if it doesn't exist

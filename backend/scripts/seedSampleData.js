@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
 // Database configuration
-const dbPath = path.join(__dirname, '..', 'db', 'questionbank.db');
+const dbPath = path.join(__dirname, '..', 'db', 'questionbank01.db');
 const db = new sqlite3.Database(dbPath);
 
 // Helper function to run SQL queries with promises

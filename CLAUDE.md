@@ -58,7 +58,7 @@ npm test                    # Run React tests
 ## Database Management
 
 The project uses SQLite with a migration system. Database files:
-- Development: `db/questionbank.db`
+- Development: `db/questionbank01.db`
 - Legacy: `database.sqlite`
 
 ### Running Migrations

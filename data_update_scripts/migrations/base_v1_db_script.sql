@@ -1,8 +1,19 @@
 -- EmployDEX Base Platform - Database Initialization Script
 -- Created: 2025-06-26
-
+--always change base_v1_db_script.sql and base_v1_data_script.sql all together 
 -- Enable foreign keys
 PRAGMA foreign_keys = ON;
+-- Drop tables if they already exist
+DROP TABLE IF EXISTS base_users_master;
+DROP TABLE IF EXISTS base_roles_master;
+DROP TABLE IF EXISTS base_user_roles_tx;
+DROP TABLE IF EXISTS base_permissions_master;
+DROP TABLE IF EXISTS base_role_permissions_tx;
+DROP TABLE IF EXISTS base_activity_logs_tx;
+DROP TABLE IF EXISTS base_payment_qr_codes;
+DROP TABLE IF EXISTS base_payment_transactions;
+DROP TABLE IF EXISTS base_feature_toggles;
+
 
 -- Create users table (master data)
 CREATE TABLE IF NOT EXISTS base_users_master (
@@ -146,98 +157,14 @@ CREATE INDEX IF NOT EXISTS idx_transaction_status ON base_payment_transactions(p
 
 -- Migration: Add base_feature_toggles table
 CREATE TABLE IF NOT EXISTS base_feature_toggles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    feature_toggle_id INTEGER PRIMARY KEY AUTOINCREMENT,
     feature_name TEXT UNIQUE NOT NULL,
     is_enabled INTEGER NOT NULL DEFAULT 0,
-    description TEXT,
+    feature_description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 
-
-
--- Insert default roles
-INSERT OR IGNORE INTO base_roles_master (name, description) VALUES 
-    ('Admin', 'Administrator with full system access'),
-    ('User', 'Standard user with limited access');
-
--- Insert default permissions
-INSERT OR IGNORE INTO base_permissions_master (name, description) VALUES
-    ('user_view', 'Can view user details'),
-    ('user_create', 'Can create users'),
-    ('user_edit', 'Can edit user details'),
-    ('user_delete', 'Can delete users'),
-    ('role_view', 'Can view roles'),
-    ('role_create', 'Can create roles'),
-    ('role_edit', 'Can edit roles'),
-    ('role_delete', 'Can delete roles'),
-    ('permission_view', 'Can view permissions'),
-    ('permission_create', 'Can view permissions'),
-    ('permission_edit', 'Can view permissions'),
-    ('permission_delete', 'Can view permissions'),
-   ('feature_toggle_view', 'View feature toggles'),
-   ('feature_toggle_manage', 'Create, edit, or delete feature toggles'),
-   ('permission_assign', 'Can assign permissions to roles');
-
--- Assign all permissions to Admin role
-INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
-SELECT 
-    (SELECT role_id FROM base_roles_master WHERE name = 'Admin'), 
-    permission_id 
-FROM base_permissions_master;
-
--- Assign basic permissions to User role
-INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
-SELECT 
-    (SELECT role_id FROM base_roles_master WHERE name = 'User'), 
-    permission_id 
-FROM base_permissions_master 
-WHERE name LIKE '%_view';
-
--- Insert default admin user with password Admin@123 (admin/admin as per requirements)
-INSERT OR IGNORE INTO base_users_master (mobile_number, password_hash, email, first_name, last_name) VALUES ('9999999999', '$2a$10$HCJ5Yd0YR1P4TGPJOyyAWe6jVXnjYQLTP8EuoNRPnT4l4XzUKCNbS', 'admin@employdex.com', 'Admin', 'User'),
-('8888888888', '$2a$10$HCJ5Yd0YR1P4TGPJOyyAWe6jVXnjYQLTP8EuoNRPnT4l4XzUKCNbS', 'user@employdex.com', 'User1', 'User1');
-
--- Note: password_hash is for 'admin' using bcrypt
-
--- Assign Admin role to the admin user
-INSERT OR IGNORE INTO base_user_roles_tx (user_id, role_id)
-VALUES (
-    (SELECT user_id FROM base_users_master WHERE email = 'admin@employdex.com'),
-    (SELECT role_id FROM base_roles_master WHERE name = 'Admin')
-),
-(
-    (SELECT user_id FROM base_users_master WHERE email = 'user@employdex.com'),
-    (SELECT role_id FROM base_roles_master WHERE name = 'User')
-);
-
-
--- Add payment feature to base_feature_toggles table
--- This allows the payment integration to be toggled on/off
-INSERT OR IGNORE INTO base_feature_toggles (feature_name, description, is_enabled, feature)
-VALUES ('payment_integration', 'Enable payment integration with QR code support', 0, 'payment');
--- Insert all permissions as feature toggles
-INSERT INTO base_feature_toggles (feature_name, description, is_enabled, feature)
-SELECT name, description, 0, 'permission'
-FROM base_permissions_master
-ON CONFLICT (feature_name) DO NOTHING;
-
--- Insert all roles as feature toggles
-INSERT INTO base_feature_toggles (feature_name, description, is_enabled, feature)
-SELECT name, description, 0, 'role'
-FROM base_roles_master
-ON CONFLICT (feature_name) DO NOTHING;
-
--- Sample data for base_payment_qr_codes
-INSERT OR IGNORE INTO base_payment_qr_codes (name, description, payment_type, image_url, active) VALUES 
-('Default UPI QR', 'Default UPI payment QR code', 'UPI', '/uploads/qr/default_upi.png', 1),
-('Corporate Account QR', 'Corporate bank account QR code', 'BANK', '/uploads/qr/corporate.png', 0);
-
--- Sample data for base_payment_transactions
-INSERT OR IGNORE INTO base_payment_transactions (qr_code_id, transaction_ref, user_id, verified) VALUES 
-(1, 'TXN123456789', 2, 1),
-(1, 'TXN987654321', 3, 0),
-(2, 'TXN567890123', 4, 0);
 
 

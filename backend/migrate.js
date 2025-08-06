@@ -4,7 +4,7 @@ const { promisify } = require('util');
 const sqlite3 = require('sqlite3').verbose();
 
 // Database configuration
-const dbPath = path.join(__dirname, '..', 'db', 'questionbank.db');
+const dbPath = path.join(__dirname, '..', 'db', 'questionbank01.db');
 const migrationsPath = path.join(__dirname, 'migrations');
 
 // Create db directory if it doesn't exist

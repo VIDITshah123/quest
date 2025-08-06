@@ -13,8 +13,7 @@ DROP TABLE IF EXISTS qb_question_votes;
 DROP TABLE IF EXISTS qb_question_scores;
 DROP TABLE IF EXISTS qb_audit_question_edits;
 DROP TABLE IF EXISTS qb_audit_employee_activities;
-
-
+DROP TABLE IF EXISTS qb_company_feature_toogle;
 
 -- Companies
 CREATE TABLE qb_master_companies (
@@ -166,4 +165,15 @@ CREATE TABLE qb_audit_employee_activities (
     employee_agent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES qb_master_employees(employee_id)
+);
+
+-- Company Feature Toggle Table
+CREATE TABLE qb_company_feature_toogle (
+    company_feature_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id INTEGER NOT NULL,
+    feature_id INTEGER NOT NULL,
+    is_enabled INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES qb_master_companies(company_id),
+    FOREIGN KEY (feature_id) REFERENCES base_feature_toggles(feature_toggle_id)
 );

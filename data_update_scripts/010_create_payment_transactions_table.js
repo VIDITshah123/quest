@@ -4,7 +4,7 @@
 
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const db = new sqlite3.Database(path.resolve(__dirname, '../questionbank.db'));
+const db = new sqlite3.Database(path.resolve(__dirname, '../questionbank01.db'));
 
 // Create base_payment_transactions table
 function up() {

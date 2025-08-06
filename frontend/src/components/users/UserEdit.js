@@ -23,18 +23,30 @@ const UserEdit = () => {
         setLoading(true);
         
         // Fetch user details
+        console.log('Fetching user details for ID:', id);
         const userResponse = await userAPI.getUser(id);
+        console.log('User data received:', userResponse.data);
         setUser(userResponse.data);
         
         // Fetch all roles
+        console.log('Fetching available roles...');
         const rolesResponse = await roleAPI.getRoles();
-        if (rolesResponse.data && Array.isArray(rolesResponse.data)) {
-          setRoles(rolesResponse.data);
-        } else if (rolesResponse.data && Array.isArray(rolesResponse.data.roles)) {
-          setRoles(rolesResponse.data.roles);
-        } else {
-          setRoles([]);
+        console.log('Roles response:', rolesResponse);
+        
+        let rolesData = [];
+        if (rolesResponse.data) {
+          // Handle different response formats
+          if (Array.isArray(rolesResponse.data)) {
+            rolesData = rolesResponse.data;
+          } else if (rolesResponse.data.roles && Array.isArray(rolesResponse.data.roles)) {
+            rolesData = rolesResponse.data.roles;
+          } else if (rolesResponse.data.data && Array.isArray(rolesResponse.data.data)) {
+            rolesData = rolesResponse.data.data;
+          }
         }
+        
+        console.log('Setting roles:', rolesData);
+        setRoles(rolesData);
         
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -96,8 +108,9 @@ const UserEdit = () => {
     isActive: Yup.boolean()
   });
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setErrors }) => {
     try {
+      console.log('Submitting user form with values:', values);
       setSaving(true);
       setError('');
       
@@ -107,7 +120,7 @@ const UserEdit = () => {
         last_name: values.lastName,
         email: values.email,
         mobile_number: values.mobileNumber,
-        roles: values.roleIds, // Changed from role_ids to roles to match backend API
+        roles: values.roleIds,
         is_active: values.isActive
       };
       
@@ -116,13 +129,66 @@ const UserEdit = () => {
         userData.password = values.password;
       }
 
-      await userAPI.updateUser(id, userData);
+      console.log('Sending user update request with data:', userData);
+      const response = await userAPI.updateUser(id, userData);
+      console.log('Update user response:', response);
+      
       toast.success('User updated successfully');
       navigate(`/users/${id}`);
     } catch (error) {
-      console.error('Error updating user:', error);
-      setError(error.response?.data?.error || 'Failed to update user. Please try again.');
-      toast.error('Failed to update user');
+      console.error('Error updating user:', {
+        error,
+        response: error.response,
+        request: error.request,
+        message: error.message,
+        config: error.config
+      });
+      
+      // Handle validation errors (422 status code)
+      if (error.response?.status === 422 && error.response.data?.errors) {
+        // Convert backend validation errors to Formik format
+        const formikErrors = {};
+        error.response.data.errors.forEach(err => {
+          const field = err.param;
+          // Map backend field names to form field names if needed
+          if (field === 'first_name') formikErrors.firstName = err.msg;
+          else if (field === 'last_name') formikErrors.lastName = err.msg;
+          else if (field === 'email') formikErrors.email = err.msg;
+          else if (field === 'mobile_number') formikErrors.mobileNumber = err.msg;
+          else if (field === 'roles') formikErrors.roleIds = err.msg;
+          else formikErrors[field] = err.msg;
+        });
+        setErrors(formikErrors);
+        return;
+      }
+      
+      // Handle duplicate entry errors (409 status code)
+      if (error.response?.status === 409) {
+        setError(error.response.data?.error || 'This email or mobile number is already in use');
+        toast.error('This email or mobile number is already in use');
+        return;
+      }
+      
+      // Handle database constraint errors
+      if (error.response?.data?.code === 'SQLITE_CONSTRAINT') {
+        setError('This operation would create a duplicate entry. Please check your input.');
+        toast.error('This operation would create a duplicate entry');
+        return;
+      }
+      
+      // Handle other errors
+      const errorMessage = error.response?.data?.error || 
+                         error.response?.data?.message || 
+                         error.message || 
+                         'Failed to update user. Please try again.';
+      
+      setError(errorMessage);
+      toast.error(`Failed to update user: ${errorMessage}`);
+      
+      // If unauthorized, redirect to login
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
     } finally {
       setSaving(false);
       setSubmitting(false);
@@ -151,8 +217,27 @@ const UserEdit = () => {
     );
   }
 
-  // Extract role IDs from user object
-  const userRoleIds = user.roles ? user.roles.map(role => role.role_id) : [];
+  // Extract role IDs from user object with better error handling
+  const userRoleIds = [];
+  if (user.roles) {
+    try {
+      // Handle both array of role objects and array of role IDs
+      if (Array.isArray(user.roles)) {
+        user.roles.forEach(role => {
+          if (typeof role === 'object' && role !== null) {
+            userRoleIds.push(role.role_id || role.id || role);
+          } else if (role) {
+            // In case roles is an array of IDs
+            userRoleIds.push(role);
+          }
+        });
+      }
+      console.log('Extracted user role IDs:', userRoleIds);
+    } catch (error) {
+      console.error('Error extracting role IDs:', error);
+      // Fallback to empty array if there's an error
+    }
+  }
 
   const initialValues = {
     firstName: user.first_name || '',

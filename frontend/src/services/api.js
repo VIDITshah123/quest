@@ -3,10 +3,11 @@ import { toast } from 'react-toastify';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:5000/api', // Explicitly set the full URL
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
+  withCredentials: true // Include credentials (cookies) with requests
 });
 
 // Set the JWT token for authenticated requests
@@ -26,10 +27,50 @@ if (token) {
   setAuthToken(token);
 }
 
+// Add request interceptor to log outgoing requests
+api.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', {
+      url: config.url,
+      method: config.method,
+      data: config.data,
+      headers: config.headers,
+    });
+    return config;
+  },
+  (error) => {
+    console.error('Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
 // Add a response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response Success:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+      headers: response.headers,
+    });
+    return response;
+  },
   (error) => {
+    console.error('API Error:', {
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.config?.data,
+        headers: error.config?.headers,
+      },
+      response: {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      },
+      message: error.message,
+    });
+
     // Handle common error scenarios
     const { response } = error;
 
@@ -87,17 +128,51 @@ export const authAPI = {
 
 // User Management API
 export const userAPI = {
-  getUsers: (params) => api.get('/user_management/users', { params }),
-  getUser: (id) => api.get(`/user_management/users/${id}`),
-  createUser: (userData) => api.post('/user_management/users', userData),
-  updateUser: (id, userData) => api.put(`/user_management/users/${id}`, userData),
-  toggleUserStatus: (id, isActive) => api.patch(`/user_management/users/${id}/status`, { is_active: isActive }),
-  deleteUser: (id) => api.delete(`/user_management/users/${id}`),
-  uploadBulkUsers: (formData) => api.post('/user_management/users/bulk', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
+  // Get all users with optional filtering
+  getUsers: (params) => {
+    console.log('Fetching users with params:', params);
+    return api.get('/user_management/users', { params });
+  },
+  
+  // Get a single user by ID
+  getUser: (id) => {
+    console.log('Fetching user with ID:', id);
+    return api.get(`/user_management/users/${id}`);
+  },
+  
+  // Create a new user
+  createUser: (userData) => {
+    console.log('Creating new user:', userData);
+    return api.post('/user_management/users', userData);
+  },
+  
+  // Update an existing user
+  updateUser: (id, userData) => {
+    console.log(`Updating user ${id} with data:`, userData);
+    return api.put(`/user_management/users/${id}`, userData);
+  },
+  
+  // Toggle user active status
+  toggleUserStatus: (id, isActive) => {
+    console.log(`Toggling user ${id} status to:`, isActive);
+    return api.patch(`/user_management/users/${id}/status`, { is_active: isActive });
+  },
+  
+  // Delete a user
+  deleteUser: (id) => {
+    console.log('Deleting user with ID:', id);
+    return api.delete(`/user_management/users/${id}`);
+  },
+  
+  // Bulk upload users from CSV
+  uploadBulkUsers: (formData) => {
+    console.log('Uploading bulk users');
+    return api.post('/user_management/users/bulk', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
   downloadUserTemplate: () => api.get('/user_management/users/template', {
     responseType: 'blob'
   }),

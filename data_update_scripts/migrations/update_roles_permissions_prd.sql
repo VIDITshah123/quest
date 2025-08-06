@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS base_permissions_master (
 );
 
 -- 4. Create role_permissions junction table if it doesn't exist
-CREATE TABLE IF NOT EXISTS base_role_permissions (
+CREATE TABLE IF NOT EXISTS base_role_permissions_tx (
     role_permission_id INTEGER PRIMARY KEY AUTOINCREMENT,
     role_id INTEGER NOT NULL,
     permission_id INTEGER NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS base_role_permissions (
 );
 
 -- 5. Create user_roles junction table if it doesn't exist
-CREATE TABLE IF NOT EXISTS base_user_roles (
+CREATE TABLE IF NOT EXISTS base_user_roles_tx (
     user_role_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     role_id INTEGER NOT NULL,
@@ -73,7 +73,7 @@ INSERT OR IGNORE INTO base_permissions_master (name, description) VALUES
 
 -- 7. Map permissions to roles
 -- Admin gets all permissions
-INSERT OR IGNORE INTO base_role_permissions (role_id, permission_id)
+INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
 SELECT 
     (SELECT role_id FROM base_roles_master WHERE name = 'Admin'),
     permission_id 
@@ -81,13 +81,13 @@ FROM base_permissions_master
 WHERE name NOT IN (
     SELECT p.name 
     FROM base_permissions_master p
-    JOIN base_role_permissions rp ON p.permission_id = rp.permission_id
+    JOIN base_role_permissions_tx rp ON p.permission_id = rp.permission_id
     JOIN base_roles_master r ON rp.role_id = r.role_id
     WHERE r.name = 'Admin'
 );
 
 -- Company role permissions
-INSERT OR IGNORE INTO base_role_permissions (role_id, permission_id)
+INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
 SELECT 
     (SELECT role_id FROM base_roles_master WHERE name = 'Company'),
     permission_id 
@@ -103,7 +103,7 @@ WHERE name IN (
 );
 
 -- question_writer role permissions
-INSERT OR IGNORE INTO base_role_permissions (role_id, permission_id)
+INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
 SELECT 
     (SELECT role_id FROM base_roles_master WHERE name = 'question_writer'),
     permission_id 
@@ -118,7 +118,7 @@ WHERE name IN (
 );
 
 -- Reviewer role permissions
-INSERT OR IGNORE INTO base_role_permissions (role_id, permission_id)
+INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
 SELECT 
     (SELECT role_id FROM base_roles_master WHERE name = 'Reviewer'),
     permission_id 
@@ -131,10 +131,10 @@ WHERE name IN (
 );
 
 -- 8. Update default User role to have minimal permissions
-DELETE FROM base_role_permissions 
+DELETE FROM base_role_permissions_tx 
 WHERE role_id = (SELECT role_id FROM base_roles_master WHERE name = 'User');
 
-INSERT OR IGNORE INTO base_role_permissions (role_id, permission_id)
+INSERT OR IGNORE INTO base_role_permissions_tx (role_id, permission_id)
 SELECT 
     (SELECT role_id FROM base_roles_master WHERE name = 'User'),
     permission_id 
@@ -142,12 +142,12 @@ FROM base_permissions_master
 WHERE name = 'question_view';
 
 -- 9. Update the default admin user to ensure it has the Admin role
-INSERT OR IGNORE INTO base_user_roles (user_id, role_id)
+INSERT OR IGNORE INTO base_user_roles_tx (user_id, role_id)
 SELECT 
     (SELECT user_id FROM base_users_master WHERE email = 'admin@employdex.com' LIMIT 1),
     (SELECT role_id FROM base_roles_master WHERE name = 'Admin')
 WHERE NOT EXISTS (
-    SELECT 1 FROM base_user_roles ur
+    SELECT 1 FROM base_user_roles_tx ur
     JOIN base_users_master u ON ur.user_id = u.user_id
     JOIN base_roles_master r ON ur.role_id = r.role_id
     WHERE u.email = 'admin@employdex.com' AND r.name = 'Admin'
@@ -159,6 +159,6 @@ COMMIT;
 -- 10. Verify the changes
 SELECT r.name AS role, p.name AS permission
 FROM base_roles_master r
-JOIN base_role_permissions rp ON r.role_id = rp.role_id
+JOIN base_role_permissions_tx rp ON r.role_id = rp.role_id
 JOIN base_permissions_master p ON rp.permission_id = p.permission_id
 ORDER BY r.name, p.name;
